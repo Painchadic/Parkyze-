@@ -82,6 +82,18 @@ class Route(ParkingTree) :
             points[i][1] += route.position[1]
         route.forme = shapely.geometry.Polygon(points)
         return route
+    
+    def cutEnd(self, a:float) :
+
+        self.longueur -= a
+        points = [(-self.largeur / 2, self.largeur / 2), (self.largeur / 2 + self.longueur, self.largeur / 2), (self.largeur / 2 + self.longueur, - self.largeur / 2), (-self.largeur / 2, - self.largeur / 2), (-self.largeur / 2, self.largeur / 2)]
+        for i in range(len(points)):
+            points[i] = rotationAlpha(points[i], self.angle)
+            points[i][0] += self.position[0]
+            points[i][1] += self.position[1]
+        self.forme = shapely.geometry.Polygon(points)
+        if self.longueur < 0 :
+            self.__del__()
 
     
 
@@ -275,7 +287,7 @@ def camera(e):
 
 def remplissagePlace(parking, longueur, largeur, edt):
     #Ici on va parcourir toutes les routes afin de remplir tout esapce disponible en places
-    for route in parking:
+    for route in parking[::-1]:
         if type(route) != Route :
             continue
         e = (largeur - route.largeur)/2
