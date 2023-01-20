@@ -68,10 +68,6 @@ class Route(ParkingTree) :
 
         return(1)
 
-    def __del__(self):
-        if self.pere and self.valide:
-            self.pere.fils.remove(self)
-
     def copy(self, edt):
         route = Route(False, self.longueur, self.largeur, self.angle, edt)
         route.position = self.position
@@ -93,7 +89,7 @@ class Route(ParkingTree) :
             points[i][1] += self.position[1]
         self.forme = shapely.geometry.Polygon(points)
         if self.longueur < 0 :
-            self.__del__()
+            self.valide = False
 
     
 
@@ -252,6 +248,8 @@ def gene(n, li, lim):
     #vérifie si un élément du parking empiete sur l'élément n à lim m² près
     point1 = n.forme
     for j in li:
+        if not(j.valide):
+            continue
         point2 = j.forme
         if (n == j) :
             break
@@ -288,7 +286,7 @@ def camera(e):
 def remplissagePlace(parking, longueur, largeur, edt):
     #Ici on va parcourir toutes les routes afin de remplir tout esapce disponible en places
     for route in parking[::-1]:
-        if type(route) != Route :
+        if type(route) != Route or not(route.valide):
             continue
         e = (largeur - route.largeur)/2
         while e < route.longueur + route.largeur - largeur :
