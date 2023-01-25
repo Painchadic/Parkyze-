@@ -85,8 +85,6 @@ def remplissageAutoParkingStandart3(espace, rampe, largeurRoute, longueurPlace, 
 
     parking[1].cutEnd(longueurPlace)
 
-    print("Début 1")
-
     eNew = m.sqrt(2) * largeurRoute
     thetaNew = parking[1].angle + (m.pi/4)
     newPos = pc.positionFin(parking[1])
@@ -102,15 +100,11 @@ def remplissageAutoParkingStandart3(espace, rampe, largeurRoute, longueurPlace, 
         testRoute = pc.Route(testRoute, longueurOpti, largeurRoute, 0, espace)
         carla = testRoute.valide
 
-    print("Début 2")
-
-
     routeDispo = [None,None,None]
     aireDispo = [0,0,0]
     nbRoute = [0,0,0]
 
     for i in range(2,nbNewRoute + 2):
-        print("Début 2 " + str(i))
         newRoute = pc.maxRoad(parking[i], largeurRoute, -m.pi/2, espace, 0.1)
         newRoute.cutEnd(longueurPlace)
         if not(newRoute.valide) :
@@ -148,10 +142,6 @@ def remplissageAutoParkingStandart3(espace, rampe, largeurRoute, longueurPlace, 
             nbRoute = [nbRoute[0], nbRoute[1], i - 1]
         
     parkinglist = [parking.copy(), parking.copy(), parking.copy()]
-
-    print(routeDispo)
-    print(aireDispo)
-    print(nbRoute)
 
     for i in range(3):
         if not(routeDispo[i]):

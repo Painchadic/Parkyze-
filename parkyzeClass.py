@@ -11,11 +11,12 @@ class ParkingTree :
         self.fils += [pt]
 
 class Route(ParkingTree) :
-    def __init__(self, p, l, lar, a, edt):
+    def __init__(self, p, l, lar, a, edt, lim = False):
         super().__init__(p)
         self.longueur = l
         self.largeur = lar
         self.angle = a 
+        self.limite = lim
         self.position = [0,0]
         if p != False :
             self.angle = a + p.angle
@@ -171,8 +172,13 @@ class EspaceDeTravail :
         self.forme = shapely.geometry.Polygon(f)
         self.color = 'y'
 
+def positionA(e, d) :
+    if d > e.longueur:
+        raise Exception("Distance trop grande")
+    return [e.position[0] + m.cos(e.angle)*d, e.position[1] + m.sin(e.angle)*d]
+
 def positionFin(e) :
-    return [e.position[0] + m.cos(e.angle)*e.longueur, e.position[1] + m.sin(e.angle)*e.longueur]
+    return positionA(e, e.longueur)
 
 def rotationAlpha(pos, a) :
     res = [0,0]
@@ -260,10 +266,9 @@ def gene(n, li, lim):
 
 def inEspaceDeTravail(poly, e) -> bool:
     #Vérifie si le polynome poly est dans l'espace de travail
-    tmp = poly.intersection(e)
-    if (tmp.area + 0.01) < poly.area :
-        return False
-    return True
+    if e.contains(poly) :
+        return True
+    return False
 
 def camera(e):
     #Selon les dimensions de l'espace de travail, pose la camera 
@@ -289,7 +294,7 @@ def remplissagePlace(parking, longueur, largeur, edt):
         if type(route) != Route or not(route.valide):
             continue
         e = (largeur - route.largeur)/2
-        while e < route.longueur + route.largeur - largeur :
+        while e < route.longueur + route.largeur - 2*(largeur) :
             place = Place(route, longueur, largeur, e, 'droite', edt)
             probleme, cause = gene(n = place, li = parking, lim = 0.01)
             if not(probleme) :
@@ -300,7 +305,7 @@ def remplissagePlace(parking, longueur, largeur, edt):
                 e = finProblem(cause, route, longueur) + largeur/2
 
         e = (largeur - route.largeur)/2
-        while e < route.longueur + route.largeur - largeur :
+        while e < route.longueur + route.largeur - 2*(largeur) :
             place = Place(route, longueur, largeur, e, 'gauche', edt)
             probleme, cause = gene(n = place, li = parking, lim = 0.01)
             if not(probleme) :
