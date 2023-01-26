@@ -8,13 +8,13 @@ long = int(b - a) + 1
 grid = [[0 for i in range(long)] for j in range(long)]
 gridBot = [[0 for i in range(long)] for j in range(long)]
 gridRight = [[0 for i in range(long)] for j in range(long)]
-s = [[0 for i in range(long)] for j in range(long)]
+""" s = [[0 for i in range(long)] for j in range(long)] """
 
 for i in range(long):
     for j in range(long):
         square = shapely.geometry.Polygon([(a + i, c + j),(a + i + 1, c + j),(a + i + 1, c + j + 1),(a + i, c + j + 1),(a + i, c + j)])       
         grid[i][j] = espace.forme.contains(square)
-        s[i][j] = square
+        """ s[i][j] = square """
 
 for i in range(long - 1, -1, -1):
     for j in range(long - 1, -1, -1):
@@ -72,10 +72,10 @@ rectMax = [(a + coord[0], c + coord[1]), (a + coord[0] + colonneMax, c + coord[1
 rectMax = shapely.geometry.Polygon(rectMax)
 
 resX, resY = espace.forme.exterior.xy
-py.plot(resX,resY, color = espace.color)
+py.fill(resX,resY, color = espace.color)
 
 resX0, resY0 = rectMax.exterior.xy
-py.plot(resX0,resY0, color = 'b')
+py.fill(resX0,resY0, color = 'b')
 
 py.xlim(a,b)
 py.ylim(c,d)
