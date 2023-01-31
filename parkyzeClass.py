@@ -1,6 +1,9 @@
 import math as m
 import shapely.geometry
 
+class surfacecirculation :
+    surface = 0
+    
 class ParkingTree :
 
     def __init__(self, p):
@@ -11,11 +14,13 @@ class ParkingTree :
         self.fils += [pt]
 
 class Route(ParkingTree) :
-    def __init__(self, p, l, lar, a):
+    def __init__(self, p, l, lar, a, edt, lim = False):
         super().__init__(p)
         self.longueur = l
         self.largeur = lar
-        self.angle = a 
+        self.angle = a
+        self.surface = self.longueur*self.largeur
+        self.limite = lim
         self.position = [0,0]
         if p != False :
             self.angle = a + p.angle
@@ -26,7 +31,72 @@ class Route(ParkingTree) :
             points[i][0] += self.position[0]
             points[i][1] += self.position[1]
         self.forme = shapely.geometry.Polygon(points)
+        if edt != 1:
+            self.valide = inEspaceDeTravail(self.forme, edt.forme)
+        else :
+            self.valide = True
+            
+        if self.valide:
+            if p != False :
+                p.fils += [self]
         self.color = 'k'
+        
+
+    def __str__(self) -> str:
+        x = "Route qui va de [" + str(self.position[0]) + ";" + str(self.position[1]) + "] à [" + str(positionFin(self)[0]) + ";" + str(positionFin(self)[1]) + "]."
+        return x
+
+    def cut(self, a : float):
+
+        
+        l = self.longueur
+        self.longueur = a
+        points = [(-self.largeur / 2, self.largeur / 2), (self.largeur / 2 + self.longueur, self.largeur / 2), (self.largeur / 2 + self.longueur, - self.largeur / 2), (-self.largeur / 2, - self.largeur / 2), (-self.largeur / 2, self.largeur / 2)]
+        for i in range(len(points)):
+            points[i] = rotationAlpha(points[i], self.angle)
+            points[i][0] += self.position[0]
+            points[i][1] += self.position[1]
+        self.forme = shapely.geometry.Polygon(points)
+
+        secondeRoute = Route(self, l - a, self.largeur, 0, 1)
+        return secondeRoute
+
+    def turn(self, a : float):
+
+        self.angle += a
+        points = [(-self.largeur / 2, self.largeur / 2), (self.largeur / 2 + self.longueur, self.largeur / 2), (self.largeur / 2 + self.longueur, - self.largeur / 2), (-self.largeur / 2, - self.largeur / 2), (-self.largeur / 2, self.largeur / 2)]
+        for i in range(len(points)):
+            points[i] = rotationAlpha(points[i], self.angle)
+            points[i][0] += self.position[0]
+            points[i][1] += self.position[1]
+        self.forme = shapely.geometry.Polygon(points)
+
+        return(1)
+
+    def copy(self, edt):
+        route = Route(False, self.longueur, self.largeur, self.angle, edt)
+        route.position = self.position
+        points = [(-self.largeur / 2, self.largeur / 2), (self.largeur / 2 + self.longueur, self.largeur / 2), (self.largeur / 2 + self.longueur, - self.largeur / 2), (-self.largeur / 2, - self.largeur / 2), (-self.largeur / 2, self.largeur / 2)]
+        for i in range(len(points)):
+            points[i] = rotationAlpha(points[i], route.angle)
+            points[i][0] += route.position[0]
+            points[i][1] += route.position[1]
+        route.forme = shapely.geometry.Polygon(points)
+        return route
+    
+    def cutEnd(self, a:float) :
+
+        self.longueur -= a
+        points = [(-self.largeur / 2, self.largeur / 2), (self.largeur / 2 + self.longueur, self.largeur / 2), (self.largeur / 2 + self.longueur, - self.largeur / 2), (-self.largeur / 2, - self.largeur / 2), (-self.largeur / 2, self.largeur / 2)]
+        for i in range(len(points)):
+            points[i] = rotationAlpha(points[i], self.angle)
+            points[i][0] += self.position[0]
+            points[i][1] += self.position[1]
+        self.forme = shapely.geometry.Polygon(points)
+        if self.longueur < 0 :
+            self.valide = False
+
+    
 
 class Noyaux(ParkingTree) :
     forme = []
@@ -41,10 +111,16 @@ class Noyaux(ParkingTree) :
     def valid(self, limite) :
         return (self.distanceRoute <= limite)
 
+    def __str__(self):
+        x = "Noyau en " + str(self.forme.centroid.xy[0][0]) + ";" + str(self.forme.centroid.xy[1][0]) + "]."
+        return x
+
 
 class Rampe(Route) :
     def __init__(self, l, lar, pos, a, h):
-        super().__init__(False, l, lar, a)
+        if h/l > 0.18 :
+            raise Exception("Rampe trop courte")
+        super().__init__(False, l, lar, a, 1)
         self.position = pos
         self.hauteur = h
         self.color = 'r'
@@ -55,6 +131,10 @@ class Rampe(Route) :
             points[i][1] += self.position[1]
         self.forme = shapely.geometry.Polygon(points)
 
+    def __str__(self):
+        x = "Rampe qui va de [" + str(self.position[0]) + ";" + str(self.position[1]) + "] à [" + str(positionFin(self)[0]) + ";" + str(positionFin(self)[1]) + "]."
+        return x
+
     def vefifRampe(self) :
         res = True
         for k in self.fils:
@@ -64,12 +144,18 @@ class Rampe(Route) :
         return res
 
 class Place(ParkingTree) :
-    def __init__(self, p, l, lar, pos, a):
+    def __init__(self, p, l, lar, pos, a, edt):
         super().__init__(p)
         self.longueur = l 
         self.largeur = lar
-        self.position = [p.position[0] + m.cos(p.angle) * pos,p.position[1] - m.sin(p.angle) * pos]
-        self.angle = p.angle + a
+        self.pos = pos
+        self.position = [p.position[0] + m.cos(p.angle) * pos,p.position[1] + m.sin(p.angle) * pos]
+        if a == 'gauche' :
+            self.angle = p.angle + m.pi/2
+        elif a == 'droite' :
+            self.angle = p.angle - m.pi/2
+        else :
+            raise Exception("Mauvais 5e argument, soit droite soit gauche") 
         self.color = 'c'
         points = [(self.pere.largeur / 2, self.largeur / 2), (self.pere.largeur / 2 + self.longueur, self.largeur / 2), (self.pere.largeur / 2 + self.longueur, - self.largeur / 2), (self.pere.largeur / 2, - self.largeur / 2)]
         for i in range(len(points)):
@@ -77,20 +163,35 @@ class Place(ParkingTree) :
             points[i][0] += self.position[0]
             points[i][1] += self.position[1]
         self.forme = shapely.geometry.Polygon(points)
+        self.valide = inEspaceDeTravail(self.forme, edt.forme)
+        if self.valide :
+            p.fils += [self]
+
+    def __str__(self):
+        x = "Place en " + str(self.forme.centroid.xy[0][0]) + ";" + str(self.forme.centroid.xy[1][0]) + "]."
+        return x
 
 class EspaceDeTravail :
-    form = []
+    def __init__(self, f):
+        self.forme = shapely.geometry.Polygon(f)
+        self.color = 'y'
+
+def positionA(e, d) :
+    if d > e.longueur:
+        raise Exception("Distance trop grande")
+    return [e.position[0] + m.cos(e.angle)*d, e.position[1] + m.sin(e.angle)*d]
 
 def positionFin(e) :
-    return [e.position[0] + m.cos(e.angle)*e.longueur, e.position[1] - m.sin(e.angle)*e.longueur]
+    return positionA(e, e.longueur)
 
 def rotationAlpha(pos, a) :
     res = [0,0]
-    res[0] = pos[0] * m.cos(a) + pos[1] * m.sin(a)
-    res[1] = - pos[0] * m.sin(a) + pos[1] * m.cos(a)
+    res[0] = pos[0] * m.cos(a) - pos[1] * m.sin(a)
+    res[1] = pos[0] * m.sin(a) + pos[1] * m.cos(a)
     return res
 
-def closestRoute(f, r) :
+def closestRoute(f, r) -> Route:
+    #Trouve la route la plus proche du Noyaux
     res = 1000
     route = r[0]
     for i in r :
@@ -104,7 +205,7 @@ def closestRoute(f, r) :
     return res, route
 
 
-def distToRoad(f, r, res) :
+def distToRoad(f, r, res) -> float:
     # Distance To point1 r
     for i in range(len(f) - 1) :
         res = min(res, distSeg(f[i], f[i+1], r.position))
@@ -117,10 +218,10 @@ def distToRoad(f, r, res) :
         res = min(res, distSeg(r.position, fin, f[i]))
     return res
 
-def distP(a,b):#distance entre deux points
+def distP(a,b) -> float:#distance entre deux points
     d=m.sqrt(pow(a[0]-b[0],2)+pow(a[1]-b[1],2))
     return d
-def distSeg(A,B,p):# le segment AB et le point p
+def distSeg(A,B,p) -> float:# le segment AB et le point p
     # A different de B
     if (A==B):
         dist=distP(A,p)
@@ -154,12 +255,132 @@ def distSeg(A,B,p):# le segment AB et le point p
     return dist
 
 def gene(n, li, lim):
+    #vérifie si un élément du parking empiete sur l'élément n à lim m² près
     point1 = n.forme
-    for j in li :
+    for j in li:
+        if not(j.valide):
+            continue
         point2 = j.forme
         if (n == j) :
             break
         if (point1.intersection(point2).area > lim): 
             if ((type(n) != Route and type(n) != Rampe) or (type(j) != Route and type(j) != Rampe)):
-                return True
+                return True, j
+    return False, 'rien'
+
+def inEspaceDeTravail(poly, e) -> bool:
+    #Vérifie si le polynome poly est dans l'espace de travail
+    if e.contains(poly) :
+        return True
     return False
+
+def camera(e):
+    #Selon les dimensions de l'espace de travail, pose la camera 
+    xmin, ymin, xmax, ymax = e.forme.bounds
+    ecart = (xmax - xmin) - (ymax - ymin)
+    ecart /= 2
+    if ecart < 0 :
+        ymax += 1
+        ymin -= 1
+        xmax += (1 - ecart)
+        xmin -= (1 - ecart)
+    else :
+        xmax += 1
+        xmin -= 1
+        ymax += (1 + ecart)
+        ymin -= (1 + ecart)
+
+    return xmin, xmax, ymin, ymax
+
+def espace_dispo(espace, parking):
+        Area_espace=shapely.geometry.Polygon(espace.forme).area
+        Area_parking=0
+        for i in range (0,len(parking)):
+            Area_parking+=shapely.geometry.Polygon(parking[i].forme).area
+        espace_dispo=Area_espace-Area_parking
+        return(espace_dispo/Area_espace)
+
+def remplissagePlace(parking, longueur, largeur, edt):
+    #Ici on va parcourir toutes les routes afin de remplir tout esapce disponible en places
+    for route in parking[::-1]:
+        if type(route) != Route or not(route.valide):
+            continue
+        e = (largeur - route.largeur)/2
+        if not(route.limite) or route.limite == 'droite':
+            while e < route.longueur + route.largeur - 2*(largeur) :
+                espacedispo=espace_dispo(edt, parking)
+                place = Place(route, longueur, largeur, e, 'droite', edt)
+                probleme, cause = gene(n = place, li = parking, lim = 0.01)
+                if not(probleme) :
+                    if place.valide:
+                        parking += [place]
+                    e += largeur
+                else : 
+                    e = finProblem(cause, route, longueur) + largeur/2
+
+        if not(route.limite) or route.limite == 'gauche':
+            e = (largeur - route.largeur)/2
+            while e < route.longueur + route.largeur - 2*(largeur) :
+                place = Place(route, longueur, largeur, e, 'gauche', edt)
+                probleme, cause = gene(n = place, li = parking, lim = 0.01)
+                if not(probleme) :
+                    if place.valide:
+                        parking += [place]
+                    e += largeur
+                else : 
+                    e = finProblem(cause, route, longueur) + largeur/2
+    
+    return parking, espacedispo
+
+def finProblem(poly, route, longueur):
+    points = [(-route.largeur / 2, route.largeur / 2 + longueur), (route.largeur / 2 + route.longueur, route.largeur / 2 + longueur), (route.largeur / 2 + route.longueur, - route.largeur / 2 - longueur), (-route.largeur / 2, - route.largeur / 2 - longueur), (-route.largeur / 2, route.largeur / 2 + longueur)]
+    for i in range(len(points)):
+        points[i] = rotationAlpha(points[i], route.angle)
+        points[i][0] += route.position[0]
+        points[i][1] += route.position[1]
+    f = shapely.geometry.Polygon(points)
+    test = f.intersection(poly.forme)
+    xx, yy = test.exterior.xy
+    coords = [[xx[i], yy[i]] for i in range(len(xx))]
+    fin = 0
+    for co in coords :
+        fin = max(fin, (co[0] - route.position[0]) * m.cos(route.angle) + (co[1] - route.position[1]) * m.sin(route.angle))
+    return fin
+
+def nbPlace(parking) -> int:
+    res = 0
+    for e in parking :
+        if type(e) == Place :
+            res += 1
+    return res
+
+def ratio(parking, espace) -> float :
+    return (espace.forme.area / nbPlace(parking))
+
+def distSortie(rampe) -> float:
+    return distSortieAux(rampe, 0)
+
+def distSortieAux(route, longueurDuDebut) :
+    res = 0
+    for e in route.fils:
+        if type(e) == Place :
+            res = max(res, e.pos + longueurDuDebut)
+        if type(e) == Route :
+            res = max(res, distSortieAux(e, longueurDuDebut + route.longueur))
+    return res
+
+def maxRoad(p, lar, a, edt, lim):
+    copyPere = p.copy(edt)
+    xmin, ymin, xmax, ymax = edt.forme.bounds
+    mini = 0
+    maxi = max(xmax - xmin, ymax - ymin)
+
+    while (maxi - mini) > lim:
+        inter = (maxi + mini)/2
+        tmpRoute = Route(copyPere, inter, lar, a, edt)
+        if tmpRoute.valide:
+            mini = inter
+        else : 
+            maxi = inter
+        del tmpRoute
+    return Route(p, mini, lar, a, edt)
