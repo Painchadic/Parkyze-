@@ -8,7 +8,7 @@ import signal
 import time
 
 espace = pc.EspaceDeTravail([(-20,-32), (-20,20), (30,20), (30,-32), (-20,-32)])
-rampe = pc.Rampe(15, 5, [-25,0], 0, 2)
+rampe = pc.Rampe(16, 5, [0,-40], m.pi/2, 2)
 
 def remplissageAutoParkingStandart1(espace, rampe, largeurRoute, longueurPlace, largeurPlace):
     parking = [rampe]
@@ -70,7 +70,9 @@ def remplissageAutoParkingStandart2(espace, rampe, largeurRoute, longueurPlace, 
         else :
             construire = False
 
-    for i in range(1, len(parking)):
+    parking += [pc.maxRoad(parking[-1], largeurRoute, 0, espace, 0.1)]
+
+    for i in range(1, len(parking) - 1):
         parking += [pc.maxRoad(parking[i], largeurRoute, parking[0].angle - parking[i].angle , espace, 1)]
 
     return pc.remplissagePlace(parking, longueurPlace, largeurPlace, espace)
@@ -90,14 +92,13 @@ def remplissageAutoParkingStandart3(espace, rampe, largeurRoute, longueurPlace, 
     newPos = pc.positionFin(parking[1])
     coinAireUnX, coinAireUnY = newPos[0] + eNew * m.cos(thetaNew), newPos[1] + eNew * m.sin(thetaNew)
 
-    testRoute = pc.Route(parking[1], longueurOpti, largeurRoute, -m.pi/2, espace)
+    testRoute = pc.Route(parking[1], longueurOpti, largeurRoute, -m.pi/2, espace, 'gauche')
     nbNewRoute = 0
     carla = testRoute.valide
     while carla:
-        print("Début 1 " + str(nbNewRoute) + " " + testRoute.__str__())
         parking += [testRoute]
         nbNewRoute += 1
-        testRoute = pc.Route(testRoute, longueurOpti, largeurRoute, 0, espace)
+        testRoute = pc.Route(testRoute, longueurOpti, largeurRoute, 0, espace, 'gauche')
         carla = testRoute.valide
 
     routeDispo = [None,None,None]
@@ -152,7 +153,7 @@ def remplissageAutoParkingStandart3(espace, rampe, largeurRoute, longueurPlace, 
         for j in range(2, nbRoute[i] + 2 ):
             parkinglist[i] += [pc.Route(parkinglist[i][j], long0, largeurRoute, -m.pi/2, espace)]
         print(parkinglist[i][-1])
-        parkinglist[i] += [pc.Route(parkinglist[i][-1], nbRoute[i] * longueurOpti, largeurRoute, -m.pi/2, espace)]
+        parkinglist[i] += [pc.Route(parkinglist[i][-1], nbRoute[i] * longueurOpti, largeurRoute, -m.pi/2, espace, 'gauche')]
         for j in range(nbRoute[i] + 2, nbNewRoute+2):
             parkinglist[i][j].valide = False
         parkinglist[i] = pc.remplissagePlace(parkinglist[i], longueurPlace, largeurPlace, espace)
@@ -170,7 +171,7 @@ def remplissageAutoParkingStandart3(espace, rampe, largeurRoute, longueurPlace, 
     return parkinglist[iMax]
 
 
-parking = remplissageAutoParkingStandart3(espace, rampe, 5, 5, 2.5)
+parking = remplissageAutoParkingStandart2(espace, rampe, 5, 5, 2.5)
 
 print(pc.distSortie(parking[0]))
 print(pc.nbPlace(parking))

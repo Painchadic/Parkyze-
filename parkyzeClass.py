@@ -294,26 +294,28 @@ def remplissagePlace(parking, longueur, largeur, edt):
         if type(route) != Route or not(route.valide):
             continue
         e = (largeur - route.largeur)/2
-        while e < route.longueur + route.largeur - 2*(largeur) :
-            place = Place(route, longueur, largeur, e, 'droite', edt)
-            probleme, cause = gene(n = place, li = parking, lim = 0.01)
-            if not(probleme) :
-                if place.valide:
-                    parking += [place]
-                e += largeur
-            else : 
-                e = finProblem(cause, route, longueur) + largeur/2
+        if not(route.limite) or route.limite == 'droite':
+            while e < route.longueur + route.largeur - 2*(largeur) :
+                place = Place(route, longueur, largeur, e, 'droite', edt)
+                probleme, cause = gene(n = place, li = parking, lim = 0.01)
+                if not(probleme) :
+                    if place.valide:
+                        parking += [place]
+                    e += largeur
+                else : 
+                    e = finProblem(cause, route, longueur) + largeur/2
 
-        e = (largeur - route.largeur)/2
-        while e < route.longueur + route.largeur - 2*(largeur) :
-            place = Place(route, longueur, largeur, e, 'gauche', edt)
-            probleme, cause = gene(n = place, li = parking, lim = 0.01)
-            if not(probleme) :
-                if place.valide:
-                    parking += [place]
-                e += largeur
-            else : 
-                e = finProblem(cause, route, longueur) + largeur/2
+        if not(route.limite) or route.limite == 'gauche':
+            e = (largeur - route.largeur)/2
+            while e < route.longueur + route.largeur - 2*(largeur) :
+                place = Place(route, longueur, largeur, e, 'gauche', edt)
+                probleme, cause = gene(n = place, li = parking, lim = 0.01)
+                if not(probleme) :
+                    if place.valide:
+                        parking += [place]
+                    e += largeur
+                else : 
+                    e = finProblem(cause, route, longueur) + largeur/2
     
     return parking
 
