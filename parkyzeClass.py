@@ -259,10 +259,24 @@ def gene(n, li, lim):
         point2 = j.forme
         if (n == j) :
             break
-        if (point1.intersection(point2).area > lim): 
+        a = point1.intersection(point2)
+        if (a.area > lim): 
             if ((type(n) != Route and type(n) != Rampe) or (type(j) != Route and type(j) != Rampe)):
                 return True, j
     return False, 'rien'
+
+def geneRoute(n, p):
+    point1 = n.forme
+    for j in p:
+        if not(j.valide):
+            continue
+        point2 = j.forme
+        if (n == j) :
+            break
+        if (point1.intersects(point2)): 
+            if (j != n.pere):
+                return True
+    return False
 
 def inEspaceDeTravail(poly, e) -> bool:
     #Vérifie si le polynome poly est dans l'espace de travail
@@ -295,7 +309,7 @@ def remplissagePlace(parking, longueur, largeur, edt):
             continue
         e = (largeur - route.largeur)/2
         if not(route.limite) or route.limite == 'droite':
-            while e < route.longueur + route.largeur - 2*(largeur) :
+            while e < route.longueur + route.largeur - 1.5*(largeur) :
                 place = Place(route, longueur, largeur, e, 'droite', edt)
                 probleme, cause = gene(n = place, li = parking, lim = 0.01)
                 if not(probleme) :
@@ -303,11 +317,11 @@ def remplissagePlace(parking, longueur, largeur, edt):
                         parking += [place]
                     e += largeur
                 else : 
-                    e = finProblem(cause, route, longueur) + largeur/2
+                    e = max((finProblem(cause, route, longueur) + largeur/2),e+0.1)
 
         if not(route.limite) or route.limite == 'gauche':
             e = (largeur - route.largeur)/2
-            while e < route.longueur + route.largeur - 2*(largeur) :
+            while e < route.longueur + route.largeur - 1.5*(largeur) :
                 place = Place(route, longueur, largeur, e, 'gauche', edt)
                 probleme, cause = gene(n = place, li = parking, lim = 0.01)
                 if not(probleme) :
@@ -315,7 +329,7 @@ def remplissagePlace(parking, longueur, largeur, edt):
                         parking += [place]
                     e += largeur
                 else : 
-                    e = finProblem(cause, route, longueur) + largeur/2
+                    e = max((finProblem(cause, route, longueur) + largeur/2),e+0.1)
     
     return parking
 

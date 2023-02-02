@@ -8,7 +8,7 @@ import signal
 import time
 
 espace = pc.EspaceDeTravail([(-20,-32), (-20,20), (30,20), (30,-32), (-20,-32)])
-rampe = pc.Rampe(16, 5, [0,-40], m.pi/2, 2)
+rampe = pc.Rampe(14, 5, [-25,10], 0, 2)
 
 def remplissageAutoParkingStandart1(espace, rampe, largeurRoute, longueurPlace, largeurPlace):
     parking = [rampe]
@@ -171,11 +171,64 @@ def remplissageAutoParkingStandart3(espace, rampe, largeurRoute, longueurPlace, 
     return parkinglist[iMax]
 
 
-parking = remplissageAutoParkingStandart2(espace, rampe, 5, 5, 2.5)
+def remplissageAutoParkingStandart4(espace, rampe, largeurRoute, longueurPlace, largeurPlace):
+    parking = [rampe]
+
+    longueurOpti = largeurRoute + 2*longueurPlace
+
+    parking += [pc.maxRoad(parking[0], largeurRoute, m.pi/2, espace, 1)]
+
+    parking[1].cutEnd(longueurPlace)
+    
+    parking += [pc.maxRoad(parking[1], largeurRoute, -m.pi/2, espace, 1)]
+
+    parking[2].cutEnd(longueurPlace)
+
+    newRoute = pc.Route(parking[2], longueurOpti, largeurRoute, -m.pi/2, espace, 'gauche')
+
+    carla = newRoute.valide
+    ind = -1
+    where = 'droite'
+
+    while carla:
+        parking += [newRoute]
+
+        road = pc.maxRoad(parking[-1], largeurRoute, m.pi/2 * ind, espace, 1)
+        carlos = pc.geneRoute(road, parking)
+
+        while carlos and road.valide:
+            road.cutEnd(largeurPlace)
+            carlos = pc.geneRoute(road, parking)
+
+        road.cutEnd(longueurPlace)
+        parking += [road]
+
+        ind *= -1
+
+        newRoute = pc.Route(parking[-1], longueurOpti, largeurRoute, ind * m.pi/2, espace, where)
+
+        if where == 'droite':
+            where = 'gauche'
+        else:
+            where = 'droite'
+
+        carla = newRoute.valide
+
+    parking += [pc.maxRoad(parking[-1], largeurRoute, 0, espace, 1)]
+
+    return pc.remplissagePlace(parking, longueurPlace, largeurPlace, espace)
+
+
+
+
+
+parking = remplissageAutoParkingStandart4(espace, rampe, 5, 5, 2.5)
+
+
 
 print(pc.distSortie(parking[0]))
-print(pc.nbPlace(parking))
-print(pc.ratio(parking,espace))
+#print(pc.nbPlace(parking))
+#print(pc.ratio(parking,espace))
 #for i in parking:
 #    if type(i) == pc.Route :
 #        print(i)
