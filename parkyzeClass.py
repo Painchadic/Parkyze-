@@ -330,7 +330,7 @@ def remplissagePlace(parking, longueur, largeur, edt):
                 else : 
                     e = finProblem(cause, route, longueur) + largeur/2
     
-    return parking, espacedispo
+    return parking
 
 def finProblem(poly, route, longueur):
     points = [(-route.largeur / 2, route.largeur / 2 + longueur), (route.largeur / 2 + route.longueur, route.largeur / 2 + longueur), (route.largeur / 2 + route.longueur, - route.largeur / 2 - longueur), (-route.largeur / 2, - route.largeur / 2 - longueur), (-route.largeur / 2, route.largeur / 2 + longueur)]

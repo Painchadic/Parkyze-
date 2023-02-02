@@ -180,7 +180,78 @@ def remplissageAutoParkingStandart3(espace, rampe, largeurRoute, longueurPlace, 
     return parkinglist[iMax], espacedispo_list[iMax]
 
 
-parking, espacedispo = remplissageAutoParkingStandart3(espace, rampe, 5, 5, 2.5)
+###parking, espacedispo = remplissageAutoParkingStandart3(espace, rampe, 5, 5, 2.5)
+
+listAngle = [0, m.pi/2, -m.pi/2]
+def autoRoute(largeurRoute, parking, nbRoutes, longueurPlace):
+    listAvailable = [(0, i) for i in range(3)]
+
+    return autoRouteAux(largeurRoute, parking, listAvailable, nbRoutes, longueurPlace)
+
+def autoRouteAux(largeurRoute, parking, listAvailable, nbRoutes, longueurPlace):
+        #listAvailable de la forme [(0, 0), (0, 1)]
+        if nbRoutes < 1:
+            return parking
+        longueur = len(listAvailable)
+        index = random.randint(0, longueur - 1)
+        route, angle = listAvailable[index]
+        angle = listAngle[angle]
+        maxroadtemp= pc.maxRoad(parking[route], largeurRoute, angle, espace, 1)
+        maxroadtemp.cutEnd(longueurPlace)
+        print(type(maxroadtemp))
+        parking+= [maxroadtemp]
+        espacedispo=pc.espace_dispo(espace, parking)
+        nbRoutes -= 1
+        ###pc.surfacecirculation.surface+=surfacetemp
+        listAvailable.pop(index)
+        listAvailable += [(len(parking) - 1, i) for i in range(1,3)]
+        return autoRouteAux(largeurRoute, parking, listAvailable, nbRoutes, longueurPlace)
+
+parking = [pc.Rampe(20, 5, [-25,0], 0, 2)]
+    #parking += [pc.Noyaux(parking, [(10,10), (10,15), (20,15), (20,10), (10,10)])]
+
+def create_parking(parking):    
+    parking = autoRoute(5, parking, 10, 5)
+
+    parking = pc.remplissagePlace(parking, 5, 2.5, espace)
+    
+    if (pc.nbPlace(parking))>=0:
+        a,b,c,d = pc.camera(espace)
+        py.xlim(a,b)
+        py.ylim(c,d)
+        py.show()
+        
+nbloop= 0
+nbplace=0  
+parking = [pc.Rampe(20, 5, [-25,0], 0, 2)]
+parking = autoRoute(5, parking, 10, 5)
+parking = pc.remplissagePlace(parking, 5, 2.5, espace)
+nbplace = pc.nbPlace(parking)
+nbloop += 1
+print("nbloop =",nbloop)
+print(parking)                  
+for i in parking:
+    resX = []
+    resY = []
+
+    couleur, points = i.color, i.forme
+    if (type(i) != pc.Rampe) :
+        if (pc.gene(i, parking, 0.01)[0]) or not(pc.inEspaceDeTravail(points, espace.forme)):
+            continue
+
+    
+    resX, resY = points.exterior.xy
+    if type(i) == pc.Route :
+        py.fill(resX,resY, color = 'k')
+    py.plot(resX,resY, color = couleur)
+    
+resX, resY = espace.forme.exterior.xy
+py.plot(resX,resY, color = espace.color)
+    
+a,b,c,d = pc.camera(espace)
+py.xlim(a,b)
+py.ylim(c,d)
+py.show()
 
 print(pc.distSortie(parking[0]))
 print(pc.nbPlace(parking))
@@ -188,7 +259,7 @@ print(pc.ratio(parking,espace))
 #for i in parking:
 #    if type(i) == pc.Route :
 #        print(i)
-    
+""" 
 for i in parking:
     resX = []
     resY = []
@@ -210,6 +281,7 @@ a,b,c,d = pc.camera(espace)
 py.xlim(a,b)
 py.ylim(c,d)
 py.show()
+"""
 print("Nombre de place :", pc.nbPlace(parking))
 print("Ratio surface disponible par place :", (shapely.geometry.Polygon(espace.forme).area)/pc.nbPlace(parking))
 print("Ratio espace disponible sur espace total :", pc.espace_dispo(espace, parking))
