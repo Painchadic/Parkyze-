@@ -3,12 +3,6 @@ import math as m
 import parkyzeClass as pc
 import numpy as np
 import shapely.geometry
-import random
-import signal
-import time
-
-espace = pc.EspaceDeTravail([(-20,-70), (-20,20), (30,20), (30,-70), (-20,-70)])
-rampe = pc.Rampe(14, 5, [-25,10], 0, 2)
 
 def remplissageAutoParkingStandart1(espace, rampe, largeurRoute, longueurPlace, largeurPlace):
     parking = [rampe]
@@ -76,7 +70,6 @@ def remplissageAutoParkingStandart2(espace, rampe, largeurRoute, longueurPlace, 
         parking += [pc.maxRoad(parking[i], largeurRoute, parking[0].angle - parking[i].angle , espace, 1)]
 
     return pc.remplissagePlace(parking, longueurPlace, largeurPlace, espace)
-
 
 def remplissageAutoParkingStandart3(espace, rampe, largeurRoute, longueurPlace, largeurPlace):
     parking = [rampe]
@@ -170,7 +163,6 @@ def remplissageAutoParkingStandart3(espace, rampe, largeurRoute, longueurPlace, 
 
     return parkinglist[iMax]
 
-
 def remplissageAutoParkingStandart4(espace, rampe, largeurRoute, longueurPlace, largeurPlace):
     parking = [rampe]
 
@@ -217,41 +209,3 @@ def remplissageAutoParkingStandart4(espace, rampe, largeurRoute, longueurPlace, 
     parking += [pc.maxRoad(parking[-1], largeurRoute, 0, espace, 1)]
 
     return pc.remplissagePlace(parking, longueurPlace, largeurPlace, espace)
-
-
-
-
-
-parking = remplissageAutoParkingStandart3(espace, rampe, 5, 5, 2.5)
-
-
-
-#print(pc.distSortie(parking[0]))
-#print(pc.nbPlace(parking))
-#print(pc.ratio(parking,espace))
-#for i in parking:
-#    if type(i) == pc.Route :
-#        print(i)
-
-
-for i in parking:
-    resX = []
-    resY = []
-
-    couleur, points = i.color, i.forme
-    if (type(i) != pc.Rampe) :
-        if (pc.gene(i, parking, 0.01)[0]):
-            continue
-    
-    resX, resY = points.exterior.xy
-    if type(i) == pc.Route :
-        py.fill(resX,resY, color = 'k')
-    py.plot(resX,resY, color = couleur)
-
-resX, resY = espace.forme.exterior.xy
-py.plot(resX,resY, color = espace.color)
-
-a,b,c,d = pc.camera(espace)
-py.xlim(a,b)
-py.ylim(c,d)
-py.show()

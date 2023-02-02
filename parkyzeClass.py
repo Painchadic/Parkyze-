@@ -1,5 +1,6 @@
 import math as m
 import shapely.geometry
+import matplotlib.pyplot as py
 
 class ParkingTree :
 
