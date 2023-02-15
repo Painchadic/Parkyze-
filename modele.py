@@ -4,76 +4,55 @@ import parkyzeClass as pc
 import numpy as np
 import shapely.geometry
 
-def remplissageAutoParkingStandart1(espace, rampe, largeurRoute, longueurPlace, largeurPlace):
-    parking = [rampe]
-
+def remplissageAutoParkingStandart1(parking, largeurRoute, longueurPlace, largeurPlace, angleTest = m.pi/2):
     longueurOpti = largeurRoute + 2*longueurPlace
 
-    construire = True
-    firstTurn = True
+
     angle = 0
-    while construire:
-        route = pc.Route(parking[-1], longueurOpti, largeurRoute, 0, espace)
-        if route.valide :
-            parking += [route]
-            firstTurn = False
-        elif firstTurn :
-            if angle > m.pi :
-                break
-            angle += m.pi/2
-        else :
-            construire = False
+    lon = 0
+    while lon < longueurOpti + longueurPlace and angle < 7:
+        tmp = pc.maxRoad(parking.rampe, largeurRoute, angle, parking.espace, 0.1)
+        lon = tmp.longueur
+        angle += angleTest
+    
+    if lon < longueurOpti + longueurPlace :
+        if angleTest > m.pi/5 :
+            remplissageAutoParkingStandart1(parking, largeurRoute, longueurPlace, largeurPlace, angleTest = m.pi/10)
+        else : 
+            Exception("Pas de possibilité")
 
-    res = len(parking)
+    parking.addRoute(tmp)
+    for i in np.arange(0, lon, longueurOpti):
+        parking.addRoute(pc.maxRoad(tmp, largeurRoute, m.pi/2, parking.espace, 1, i))
+        parking.addRoute(pc.maxRoad(tmp, largeurRoute, -m.pi/2, parking.espace, 1, i))
 
-    for i in range(res):
-        parking += [pc.maxRoad(parking[i], largeurRoute, m.pi/2, espace, 1)]
-        parking += [pc.maxRoad(parking[i], largeurRoute, -m.pi/2, espace, 1)]
+    parking.remplissagePlace(longueurPlace, largeurPlace)
 
-    return pc.remplissagePlace(parking, longueurPlace, largeurPlace, espace)
+    return 1
 
-def remplissageAutoParkingStandart2(espace, rampe, largeurRoute, longueurPlace, largeurPlace):
-    parking = [rampe]
-
+def remplissageAutoParkingStandart2(parking, largeurRoute, longueurPlace, largeurPlace):
     longueurOpti = largeurRoute + 2*longueurPlace
 
-    parking += [pc.maxRoad(parking[0], largeurRoute, m.pi/2, espace, 1)]
+    parking.addRoute(pc.maxRoad(parking.rampe, largeurRoute, m.pi/2, parking.espace, 1))
 
-    parking[1].cutEnd(longueurPlace)
+    parking.routes[0].cutEnd(longueurPlace)
 
-    aba = parking[1].longueur
+    aba = parking.routes[0].longueur
     a = aba%longueurOpti
-    lng = a
 
-    while lng < aba:
-        parking += parking[-1].cut(lng)
-        lng += longueurOpti
+    parking.addRoute(pc.maxRoad(parking.rampe, largeurRoute, -m.pi/2, parking.espace, 1))
         
-    construire = True
+    for i in np.arange(a, 0, -longueurOpti):
+        lngRestant = i
+        parking.addRoute(pc.maxRoad(parking.routes[0], largeurRoute, -m.pi/2, parking.espace, 1, i))
 
-    route = pc.Route(parking[0], longueurOpti-a, largeurRoute, -m.pi/2 , espace)
-    if route.valide :
-        parking += [route]
-    else :
-        construire = False
+    for i in np.arange(longueurOpti - lngRestant, parking.routes[1].longueur, longueurOpti):
+        parking.addRoute(pc.maxRoad(parking.routes[1], largeurRoute, m.pi/2, parking.espace, 1, i))
 
-    while construire:
-        route = pc.Route(parking[-1], longueurOpti, largeurRoute, 0, espace)
-        if route.valide :
-            parking += [route]
-        else :
-            construire = False
+    parking.remplissagePlace(longueurPlace, largeurPlace)
+    return 1
 
-    parking += [pc.maxRoad(parking[-1], largeurRoute, 0, espace, 0.1)]
-
-    for i in range(1, len(parking) - 1):
-        parking += [pc.maxRoad(parking[i], largeurRoute, parking[0].angle - parking[i].angle , espace, 1)]
-
-    return pc.remplissagePlace(parking, longueurPlace, largeurPlace, espace)
-
-def remplissageAutoParkingStandart3(espace, rampe, largeurRoute, longueurPlace, largeurPlace):
-    parking = [rampe]
-
+def remplissageAutoParkingStandart3(parking, largeurRoute, longueurPlace, largeurPlace):
     longueurOpti = largeurRoute + 2*longueurPlace
 
     parking += [pc.maxRoad(parking[0], largeurRoute, m.pi/2, espace, 1)]

@@ -2,17 +2,78 @@ import math as m
 import shapely.geometry
 import matplotlib.pyplot as py
 
+
+class Parking :
+
+    def __init__(self, rampe, edt):
+        self.rampe = rampe
+        self.espace = edt
+        self.routes = []
+        self.places = []
+
+    def copy(self):
+        parking = Parking(self.rampe, self.espace)
+        parking.routes = self.routes.copy()
+        parking.places = self.places.copy()
+        return(parking)
+
+    def addRoute(self, route):
+        if route.valide:
+            self.routes += [route]
+
+    def remplissagePlace(self, longueur, largeur):
+    #Ici on va parcourir toutes les routes afin de remplir tout esapce disponible en places
+        for route in self.routes:
+            e = (largeur - route.largeur)/2
+            if not(route.limite) or route.limite == 'droite':
+                while e < route.longueur + route.largeur - 1.5*(largeur) :
+                    place = Place(route, longueur, largeur, e, 'droite', self.espace)
+                    probleme, cause = self.gene(n = place, lim = 0.01)
+                    if not(probleme) :
+                        if place.valide:
+                            self.places += [place]
+                        e += largeur
+                    else : 
+                        e = max((finProblem(cause, route, longueur) + largeur/2),e+0.1)
+
+            if not(route.limite) or route.limite == 'gauche':
+                e = (largeur - route.largeur)/2
+                while e < route.longueur + route.largeur - 1.5*(largeur) :
+                    place = Place(route, longueur, largeur, e, 'gauche', self.espace)
+                    probleme, cause = self.gene(n = place, lim = 0.01)
+                    if not(probleme) :
+                        if place.valide:
+                            self.places += [place]
+                        e += largeur
+                    else : 
+                        e = max((finProblem(cause, route, longueur) + largeur/2),e+0.1)
+        return 1
+
+    def gene(self, n, lim):
+    #vérifie si un élément du parking empiete sur l'élément n à lim m² près
+        point1 = n.forme
+        for j in (self.routes+self.places):
+            if not(j.valide):
+                continue
+            point2 = j.forme
+            if (n == j) :
+                break
+            a = point1.intersection(point2)
+            if (a.area > lim): 
+                if ((type(n) != Route and type(n) != Rampe) or (type(j) != Route and type(j) != Rampe)):
+                    return True, j
+        return False, 'rien'
+
+    def nbPlace(self):
+        return len(self.places)
+
 class ParkingTree :
 
     def __init__(self, p):
         self.pere = p
-        self.fils = []
-
-    def addFils(self, pt):
-        self.fils += [pt]
 
 class Route(ParkingTree) :
-    def __init__(self, p, l, lar, a, edt, lim = False):
+    def __init__(self, p, l, lar, a, edt, lim = False, pospere = -1):
         super().__init__(p)
         self.longueur = l
         self.largeur = lar
@@ -21,7 +82,10 @@ class Route(ParkingTree) :
         self.position = [0,0]
         if p != False :
             self.angle = a + p.angle
-            self.position = positionFin(p)
+            if pospere == -1 :
+                self.position = positionFin(p)
+            else:
+                self.position = positionA(p, pospere)
         points = [(-self.largeur / 2, self.largeur / 2), (self.largeur / 2 + self.longueur, self.largeur / 2), (self.largeur / 2 + self.longueur, - self.largeur / 2), (-self.largeur / 2, - self.largeur / 2), (-self.largeur / 2, self.largeur / 2)]
         for i in range(len(points)):
             points[i] = rotationAlpha(points[i], self.angle)
@@ -32,10 +96,6 @@ class Route(ParkingTree) :
             self.valide = inEspaceDeTravail(self.forme, edt.forme)
         else :
             self.valide = True
-            
-        if self.valide:
-            if p != False :
-                p.fils += [self]
         self.color = 'k'
         
 
@@ -44,8 +104,6 @@ class Route(ParkingTree) :
         return x
 
     def cut(self, a : float):
-
-        
         l = self.longueur
         self.longueur = a
         points = [(-self.largeur / 2, self.largeur / 2), (self.largeur / 2 + self.longueur, self.largeur / 2), (self.largeur / 2 + self.longueur, - self.largeur / 2), (-self.largeur / 2, - self.largeur / 2), (-self.largeur / 2, self.largeur / 2)]
@@ -67,7 +125,6 @@ class Route(ParkingTree) :
             points[i][0] += self.position[0]
             points[i][1] += self.position[1]
         self.forme = shapely.geometry.Polygon(points)
-
         return(1)
 
     def copy(self, edt):
@@ -82,7 +139,6 @@ class Route(ParkingTree) :
         return route
     
     def cutEnd(self, a:float) :
-
         self.longueur -= a
         points = [(-self.largeur / 2, self.largeur / 2), (self.largeur / 2 + self.longueur, self.largeur / 2), (self.largeur / 2 + self.longueur, - self.largeur / 2), (-self.largeur / 2, - self.largeur / 2), (-self.largeur / 2, self.largeur / 2)]
         for i in range(len(points)):
@@ -92,6 +148,17 @@ class Route(ParkingTree) :
         self.forme = shapely.geometry.Polygon(points)
         if self.longueur < 0 :
             self.valide = False
+        return(1)
+
+    def addEnd(self, a:float) :
+        self.longueur += a
+        points = [(-self.largeur / 2, self.largeur / 2), (self.largeur / 2 + self.longueur, self.largeur / 2), (self.largeur / 2 + self.longueur, - self.largeur / 2), (-self.largeur / 2, - self.largeur / 2), (-self.largeur / 2, self.largeur / 2)]
+        for i in range(len(points)):
+            points[i] = rotationAlpha(points[i], self.angle)
+            points[i][0] += self.position[0]
+            points[i][1] += self.position[1]
+        self.forme = shapely.geometry.Polygon(points)
+        return(1)
 
     
 
@@ -132,14 +199,6 @@ class Rampe(Route) :
         x = "Rampe qui va de [" + str(self.position[0]) + ";" + str(self.position[1]) + "] à [" + str(positionFin(self)[0]) + ";" + str(positionFin(self)[1]) + "]."
         return x
 
-    def vefifRampe(self) :
-        res = True
-        for k in self.fils:
-            if type(k) != Route :
-                res = False
-                break
-        return res
-
 class Place(ParkingTree) :
     def __init__(self, p, l, lar, pos, a, edt):
         super().__init__(p)
@@ -161,8 +220,6 @@ class Place(ParkingTree) :
             points[i][1] += self.position[1]
         self.forme = shapely.geometry.Polygon(points)
         self.valide = inEspaceDeTravail(self.forme, edt.forme)
-        if self.valide :
-            p.fils += [self]
 
     def __str__(self):
         x = "Place en " + str(self.forme.centroid.xy[0][0]) + ";" + str(self.forme.centroid.xy[1][0]) + "]."
@@ -251,21 +308,6 @@ def distSeg(A,B,p) -> float:# le segment AB et le point p
                 pp=B
     return dist
 
-def gene(n, li, lim):
-    #vérifie si un élément du parking empiete sur l'élément n à lim m² près
-    point1 = n.forme
-    for j in li:
-        if not(j.valide):
-            continue
-        point2 = j.forme
-        if (n == j) :
-            break
-        a = point1.intersection(point2)
-        if (a.area > lim): 
-            if ((type(n) != Route and type(n) != Rampe) or (type(j) != Route and type(j) != Rampe)):
-                return True, j
-    return False, 'rien'
-
 def geneRoute(n, p):
     point1 = n.forme
     for j in p:
@@ -303,37 +345,6 @@ def camera(e):
 
     return xmin, xmax, ymin, ymax
 
-def remplissagePlace(parking, longueur, largeur, edt):
-    #Ici on va parcourir toutes les routes afin de remplir tout esapce disponible en places
-    for route in parking[::-1]:
-        if type(route) != Route or not(route.valide):
-            continue
-        e = (largeur - route.largeur)/2
-        if not(route.limite) or route.limite == 'droite':
-            while e < route.longueur + route.largeur - 1.5*(largeur) :
-                place = Place(route, longueur, largeur, e, 'droite', edt)
-                probleme, cause = gene(n = place, li = parking, lim = 0.01)
-                if not(probleme) :
-                    if place.valide:
-                        parking += [place]
-                    e += largeur
-                else : 
-                    e = max((finProblem(cause, route, longueur) + largeur/2),e+0.1)
-
-        if not(route.limite) or route.limite == 'gauche':
-            e = (largeur - route.largeur)/2
-            while e < route.longueur + route.largeur - 1.5*(largeur) :
-                place = Place(route, longueur, largeur, e, 'gauche', edt)
-                probleme, cause = gene(n = place, li = parking, lim = 0.01)
-                if not(probleme) :
-                    if place.valide:
-                        parking += [place]
-                    e += largeur
-                else : 
-                    e = max((finProblem(cause, route, longueur) + largeur/2),e+0.1)
-    
-    return parking
-
 def finProblem(poly, route, longueur):
     points = [(-route.largeur / 2, route.largeur / 2 + longueur), (route.largeur / 2 + route.longueur, route.largeur / 2 + longueur), (route.largeur / 2 + route.longueur, - route.largeur / 2 - longueur), (-route.largeur / 2, - route.largeur / 2 - longueur), (-route.largeur / 2, route.largeur / 2 + longueur)]
     for i in range(len(points)):
@@ -359,19 +370,9 @@ def nbPlace(parking) -> int:
 def ratio(parking, espace) -> float :
     return (espace.forme.area / nbPlace(parking))
 
-def distSortie(rampe) -> float:
-    return distSortieAux(rampe, 0)
+#def dist sortie
 
-def distSortieAux(route, longueurDuDebut) :
-    res = 0
-    for e in route.fils:
-        if type(e) == Place :
-            res = max(res, e.pos + longueurDuDebut)
-        if type(e) == Route :
-            res = max(res, distSortieAux(e, longueurDuDebut + route.longueur))
-    return res
-
-def maxRoad(p, lar, a, edt, lim):
+def maxRoad(p, lar, a, edt, lim, posper = -1):
     copyPere = p.copy(edt)
     xmin, ymin, xmax, ymax = edt.forme.bounds
     mini = 0
@@ -379,10 +380,10 @@ def maxRoad(p, lar, a, edt, lim):
 
     while (maxi - mini) > lim:
         inter = (maxi + mini)/2
-        tmpRoute = Route(copyPere, inter, lar, a, edt)
+        tmpRoute = Route(copyPere, inter, lar, a, edt, pospere = posper)
         if tmpRoute.valide:
             mini = inter
         else : 
             maxi = inter
         del tmpRoute
-    return Route(p, mini, lar, a, edt)
+    return Route(p, mini, lar, a, edt, pospere = posper)
