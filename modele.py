@@ -52,42 +52,49 @@ def remplissageAutoParkingStandart2(parking, largeurRoute, longueurPlace, largeu
     parking.remplissagePlace(longueurPlace, largeurPlace)
     return 1
 
-def remplissageAutoParkingStandart3(parking, largeurRoute, longueurPlace, largeurPlace):
+def remplissageAutoParkingStandart3(parking : pc.Parking, largeurRoute, longueurPlace, largeurPlace):
     longueurOpti = largeurRoute + 2*longueurPlace
 
-    parking += [pc.maxRoad(parking[0], largeurRoute, m.pi/2, espace, 1)]
+    parking.addRoute(pc.maxRoad(parking.rampe, largeurRoute, m.pi/2, parking.espace, 1))
 
-    parking[1].cutEnd(longueurPlace)
+    parking.routes[0].cutEnd(longueurPlace)
 
     eNew = m.sqrt(2) * largeurRoute
-    thetaNew = parking[1].angle + (m.pi/4)
-    newPos = pc.positionFin(parking[1])
+    thetaNew = parking.routes[0].angle + (m.pi/4)
+    newPos = pc.positionFin(parking.routes[0])
     coinAireUnX, coinAireUnY = newPos[0] + eNew * m.cos(thetaNew), newPos[1] + eNew * m.sin(thetaNew)
 
-    testRoute = pc.Route(parking[1], longueurOpti, largeurRoute, -m.pi/2, espace, 'gauche')
+    testRoute = pc.Route(parking.routes[0], longueurOpti, largeurRoute, -m.pi/2, parking.espace, 'gauche')
     nbNewRoute = 0
     carla = testRoute.valide
     while carla:
-        parking += [testRoute]
         nbNewRoute += 1
-        testRoute = pc.Route(testRoute, longueurOpti, largeurRoute, 0, espace, 'gauche')
+        testRoute.addEnd(longueurOpti, parking.espace)
         carla = testRoute.valide
+    testRoute.cutEnd(longueurOpti)
+    testRoute.valide = True
+    parking.addRoute(testRoute)
 
-    routeDispo = [None,None,None]
+    routeDispo = [False,False,False]
     aireDispo = [0,0,0]
     nbRoute = [0,0,0]
 
-    for i in range(2,nbNewRoute + 2):
-        newRoute = pc.maxRoad(parking[i], largeurRoute, -m.pi/2, espace, 0.1)
+    for i in range(nbNewRoute):
+        newRoute = pc.maxRoad(parking.routes[1], largeurRoute, -m.pi/2, parking.espace, 0.1, i*longueurOpti)
         newRoute.cutEnd(longueurPlace)
+
+        cut = (newRoute.longueur - 2*largeurRoute) % largeurPlace
+        newRoute.cutEnd(cut)
+
         if not(newRoute.valide) :
             continue
+
         newPos = pc.positionFin(newRoute)
         thetaNew = newRoute.angle + (m.pi/4)
         coinAireDeuxX, coinAireDeuxY = newPos[0] + eNew * m.cos(thetaNew), newPos[1] + eNew * m.sin(thetaNew)
         points = [(coinAireUnX, coinAireUnY), (coinAireUnX, coinAireDeuxY), (coinAireDeuxX, coinAireDeuxY), (coinAireDeuxX, coinAireUnY), (coinAireUnX, coinAireUnY)]
         carrePot = shapely.geometry.Polygon(points)
-        notPossible = not(pc.inEspaceDeTravail(carrePot, espace.forme))
+        notPossible = not(pc.inEspaceDeTravail(carrePot, parking.espace.forme))
         while notPossible and newRoute.longueur > (longueurOpti*2):
             newRoute.cutEnd(largeurPlace)
             newPos = pc.positionFin(newRoute)
@@ -95,7 +102,7 @@ def remplissageAutoParkingStandart3(parking, largeurRoute, longueurPlace, largeu
             coinAireDeuxX, coinAireDeuxY = newPos[0] + eNew * m.cos(thetaNew), newPos[1] + eNew * m.sin(thetaNew)
             points = [(coinAireUnX, coinAireUnY), (coinAireUnX, coinAireDeuxY), (coinAireDeuxX, coinAireDeuxY), (coinAireDeuxX, coinAireUnY), (coinAireUnX, coinAireUnY)]
             carrePot = shapely.geometry.Polygon(points)
-            notPossible = not(pc.inEspaceDeTravail(carrePot, espace.forme))
+            notPossible = not(pc.inEspaceDeTravail(carrePot, parking.espace.forme))
         if notPossible :
             continue
         airePot = carrePot.area
@@ -104,79 +111,75 @@ def remplissageAutoParkingStandart3(parking, largeurRoute, longueurPlace, largeu
         if airePot > aireDispo[0] :
             routeDispo = [newRoute, routeDispo[0], routeDispo[1]]
             aireDispo = [airePot, aireDispo[0], aireDispo[1]]
-            nbRoute = [i - 1, nbRoute[0], nbRoute[1]]
+            nbRoute = [i + 2, nbRoute[0], nbRoute[1]]
         elif airePot < aireDispo[1] :
             routeDispo = [routeDispo[0], newRoute, routeDispo[1]]
             aireDispo = [aireDispo[0], airePot, aireDispo[1]]
-            nbRoute = [nbRoute[0], i - 1, nbRoute[1]]
+            nbRoute = [nbRoute[0], i + 2, nbRoute[1]]
         else : 
             routeDispo = [routeDispo[0], routeDispo[1], newRoute]
             aireDispo = [aireDispo[0], aireDispo[1], airePot]
-            nbRoute = [nbRoute[0], nbRoute[1], i - 1]
+            nbRoute = [nbRoute[0], nbRoute[1], i + 2]
         
+    print(routeDispo)
     parkinglist = [parking.copy(), parking.copy(), parking.copy()]
 
     for i in range(3):
         if not(routeDispo[i]):
             continue 
         long0 = routeDispo[i].longueur
-        long1 = long0 - parkinglist[i][1].longueur
-        parkinglist[i] += [pc.Route(parkinglist[i][0], long1, largeurRoute, -m.pi/2, espace)]
-        for j in range(2, nbRoute[i] + 2 ):
-            parkinglist[i] += [pc.Route(parkinglist[i][j], long0, largeurRoute, -m.pi/2, espace)]
-        print(parkinglist[i][-1])
-        parkinglist[i] += [pc.Route(parkinglist[i][-1], nbRoute[i] * longueurOpti, largeurRoute, -m.pi/2, espace, 'gauche')]
-        for j in range(nbRoute[i] + 2, nbNewRoute+2):
-            parkinglist[i][j].valide = False
-        parkinglist[i] = pc.remplissagePlace(parkinglist[i], longueurPlace, largeurPlace, espace)
+        long1 = long0 - parkinglist[i].routes[0].longueur
+        parkinglist[i].addRoute(pc.Route(parkinglist[i].rampe, long1, largeurRoute, -m.pi/2, parking.espace))
+        for j in range(1,nbRoute[i]):
+            parkinglist[i].addRoute(pc.Route(parkinglist[i].routes[1], long0, largeurRoute, -m.pi/2, parking.espace, pospere = ((j)*longueurOpti)))
+        parkinglist[i].addRoute(pc.Route(parkinglist[i].routes[2], (nbRoute[i]-1) * longueurOpti, largeurRoute, m.pi/2, parking.espace, 'droite'))
+        parkinglist[i].remplissagePlace(longueurPlace, largeurPlace)
 
     iMax = 0
-    nbMaxPlace = pc.nbPlace(parkinglist[0])
+    nbMaxPlace = parkinglist[0].nbPlace()
     for i in range(1,3):
         if not(routeDispo[i]):
             continue 
-        nbP = pc.nbPlace(parkinglist[i])
+        nbP = parkinglist[i].nbPlace()
         if nbP > nbMaxPlace :
             nbMaxPlace = nbP
             iMax = i
 
     return parkinglist[iMax]
 
-def remplissageAutoParkingStandart4(espace, rampe, largeurRoute, longueurPlace, largeurPlace):
-    parking = [rampe]
-
+def remplissageAutoParkingStandart4(parking : pc.Parking, largeurRoute, longueurPlace, largeurPlace):
     longueurOpti = largeurRoute + 2*longueurPlace
 
-    parking += [pc.maxRoad(parking[0], largeurRoute, m.pi/2, espace, 1)]
+    parking.addRoute(pc.maxRoad(parking.rampe, largeurRoute, m.pi/2, parking.espace, 1))
 
-    parking[1].cutEnd(longueurPlace)
+    parking.routes[0].cutEnd(longueurPlace)
     
-    parking += [pc.maxRoad(parking[1], largeurRoute, -m.pi/2, espace, 1)]
+    parking.addRoute(pc.maxRoad(parking.routes[0], largeurRoute, -m.pi/2, parking.espace, 1))
 
-    parking[2].cutEnd(longueurPlace)
+    parking.routes[1].cutEnd(longueurPlace)
 
-    newRoute = pc.Route(parking[2], longueurOpti, largeurRoute, -m.pi/2, espace, 'gauche')
+    newRoute = pc.Route(parking.routes[1], longueurOpti, largeurRoute, -m.pi/2, parking.espace, 'gauche')
 
     carla = newRoute.valide
     ind = -1
     where = 'droite'
 
     while carla:
-        parking += [newRoute]
+        parking.addRoute(newRoute)
 
-        road = pc.maxRoad(parking[-1], largeurRoute, m.pi/2 * ind, espace, 1)
-        carlos = pc.geneRoute(road, parking)
+        road = pc.maxRoad(parking.routes[-1], largeurRoute, m.pi/2 * ind, parking.espace, 1)
+        carlos = pc.geneRoute(road, (parking.routes + [parking.rampe]))
 
         while carlos and road.valide:
             road.cutEnd(largeurPlace)
-            carlos = pc.geneRoute(road, parking)
+            carlos = pc.geneRoute(road, (parking.routes + [parking.rampe]))
 
         road.cutEnd(longueurPlace)
-        parking += [road]
+        parking.addRoute(road)
 
         ind *= -1
 
-        newRoute = pc.Route(parking[-1], longueurOpti, largeurRoute, ind * m.pi/2, espace, where)
+        newRoute = pc.Route(parking.routes[-1], longueurOpti, largeurRoute, ind * m.pi/2, parking.espace, where)
 
         if where == 'droite':
             where = 'gauche'
@@ -185,6 +188,8 @@ def remplissageAutoParkingStandart4(espace, rampe, largeurRoute, longueurPlace, 
 
         carla = newRoute.valide
 
-    parking += [pc.maxRoad(parking[-1], largeurRoute, 0, espace, 1)]
+    parking.routes[-1].addEnd(largeurPlace, parking.espace)
 
-    return pc.remplissagePlace(parking, longueurPlace, largeurPlace, espace)
+    parking.remplissagePlace(longueurPlace, largeurPlace)
+
+    return 1

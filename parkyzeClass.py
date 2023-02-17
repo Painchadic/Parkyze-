@@ -52,7 +52,7 @@ class Parking :
     def gene(self, n, lim):
     #vérifie si un élément du parking empiete sur l'élément n à lim m² près
         point1 = n.forme
-        for j in (self.routes+self.places):
+        for j in (self.routes+self.places+[self.rampe]):
             if not(j.valide):
                 continue
             point2 = j.forme
@@ -150,7 +150,7 @@ class Route(ParkingTree) :
             self.valide = False
         return(1)
 
-    def addEnd(self, a:float) :
+    def addEnd(self, a:float, edt) :
         self.longueur += a
         points = [(-self.largeur / 2, self.largeur / 2), (self.largeur / 2 + self.longueur, self.largeur / 2), (self.largeur / 2 + self.longueur, - self.largeur / 2), (-self.largeur / 2, - self.largeur / 2), (-self.largeur / 2, self.largeur / 2)]
         for i in range(len(points)):
@@ -158,6 +158,7 @@ class Route(ParkingTree) :
             points[i][0] += self.position[0]
             points[i][1] += self.position[1]
         self.forme = shapely.geometry.Polygon(points)
+        self.valide = inEspaceDeTravail(self.forme, edt.forme)
         return(1)
 
     
