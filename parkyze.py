@@ -6,8 +6,9 @@ import shapely.geometry
 import random
 import signal
 import time
+import math
 
-espace = pc.EspaceDeTravail([(-20,-32), (-20,20), (30,20), (30,-32), (-20,-32)])
+espace = pc.EspaceDeTravail([(-20,-120), (-20,20), (30,20), (30,-120), (-20,-120)])
 rampe = pc.Rampe(20, 5, [-25,0], 0, 2)
 
 def remplissageAutoParkingStandart1(espace, rampe, largeurRoute, longueurPlace, largeurPlace):
@@ -186,26 +187,38 @@ listAngle = [0, m.pi/2, -m.pi/2]
 def autoRoute(largeurRoute, parking, nbRoutes, longueurPlace):
     listAvailable = [(0, i) for i in range(3)]
 
-    return autoRouteAux(largeurRoute, parking, listAvailable, nbRoutes, longueurPlace)
+    return autoRouteAux(largeurRoute, parking, listAvailable, longueurPlace)
 
-def autoRouteAux(largeurRoute, parking, listAvailable, nbRoutes, longueurPlace):
+def autoRouteAux(largeurRoute, parking, listAvailable, longueurPlace):
         #listAvailable de la forme [(0, 0), (0, 1)]
-        if nbRoutes < 1:
+        if pc.espace_dispo(espace, parking) <= 0.1:
             return parking
         longueur = len(listAvailable)
         index = random.randint(0, longueur - 1)
+        random_len = random.randint(1, 3)
+        random_road = random.randint(0, 1)
         route, angle = listAvailable[index]
         angle = listAngle[angle]
-        maxroadtemp= pc.maxRoad(parking[route], largeurRoute, angle, espace, 1)
+        if parking[route].pere is not False:
+            angle_difference = (parking[route].pere.angle *180 )/ math.pi - angle *180 / math.pi
+        else : 
+            angle_difference = 90
+        
+        if random_road==0:
+            maxroadtemp= pc.maxRoad(parking[route], largeurRoute, angle, espace, 1)
+        else :
+            if not (abs(angle_difference) % 180 <= 10) :
+                maxroadtemp=pc.Route(parking[route], random_len*15, largeurRoute, angle, espace)
+            else :
+                print(angle_difference) 
+                maxroadtemp=pc.Route(parking[route], 15, largeurRoute, angle, espace)
         maxroadtemp.cutEnd(longueurPlace)
-        print(type(maxroadtemp))
         parking+= [maxroadtemp]
         espacedispo=pc.espace_dispo(espace, parking)
-        nbRoutes -= 1
         ###pc.surfacecirculation.surface+=surfacetemp
         listAvailable.pop(index)
         listAvailable += [(len(parking) - 1, i) for i in range(1,3)]
-        return autoRouteAux(largeurRoute, parking, listAvailable, nbRoutes, longueurPlace)
+        return autoRouteAux(largeurRoute, parking, listAvailable, longueurPlace)
 
 parking = [pc.Rampe(20, 5, [-25,0], 0, 2)]
     #parking += [pc.Noyaux(parking, [(10,10), (10,15), (20,15), (20,10), (10,10)])]
@@ -229,7 +242,7 @@ parking = pc.remplissagePlace(parking, 5, 2.5, espace)
 nbplace = pc.nbPlace(parking)
 nbloop += 1
 print("nbloop =",nbloop)
-print(parking)                  
+                
 for i in parking:
     resX = []
     resY = []
@@ -247,7 +260,11 @@ for i in parking:
     
 resX, resY = espace.forme.exterior.xy
 py.plot(resX,resY, color = espace.color)
-    
+
+print("Nombre de place :", pc.nbPlace(parking))
+print("Ratio surface disponible par place :", (shapely.geometry.Polygon(espace.forme).area)/pc.nbPlace(parking))
+print("Ratio espace disponible sur espace total :", abs(pc.espace_dispo(espace, parking)))
+print("Ratio surface circulation par place :", pc.surfacecirculation.surface/pc.nbPlace(parking))        
 a,b,c,d = pc.camera(espace)
 py.xlim(a,b)
 py.ylim(c,d)
@@ -282,7 +299,3 @@ py.xlim(a,b)
 py.ylim(c,d)
 py.show()
 """
-print("Nombre de place :", pc.nbPlace(parking))
-print("Ratio surface disponible par place :", (shapely.geometry.Polygon(espace.forme).area)/pc.nbPlace(parking))
-print("Ratio espace disponible sur espace total :", pc.espace_dispo(espace, parking))
-print("Ratio surface circulation par place :", pc.surfacecirculation.surface/pc.nbPlace(parking))    
