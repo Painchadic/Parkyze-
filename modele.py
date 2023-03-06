@@ -3,6 +3,7 @@ import math as m
 import parkyzeClass as pc
 import numpy as np
 import shapely.geometry
+import random
 
 def remplissageAutoParkingStandart1(parking, largeurRoute, longueurPlace, largeurPlace, angleTest = m.pi/2):
     longueurOpti = largeurRoute + 2*longueurPlace
@@ -193,3 +194,45 @@ def remplissageAutoParkingStandart4(parking : pc.Parking, largeurRoute, longueur
     parking.remplissagePlace(longueurPlace, largeurPlace)
 
     return 1
+
+def remplissageAleatoire(parking : pc.Parking, largeurRoute : float, longueurPlace : float, largeurPlace : float) :
+    listAvailable = [(-1,i) for i in range(3)]
+    remplissageAleatoireAux(parking, largeurRoute, longueurPlace, largeurPlace, listAvailable)
+    parking.remplissagePlace(longueurPlace, largeurPlace)
+    return 0
+
+def remplissageAleatoireAux(parking : pc.Parking, largeurRoute : float, longueurPlace : float, largeurPlace : float, listAvailable):
+    listAngle = [0, m.pi/2, -m.pi/2]
+    if parking.espace_dispo() <= 0.75:
+        return 0
+    longueur = len(listAvailable)
+    index = random.randint(0, longueur - 1)
+    random_len = random.randint(1, 3)
+    random_road = random.randint(0, 1)
+    route, angle = listAvailable[index]
+    angle = listAngle[angle]
+    if route != -1:
+        angle_difference = (parking.routes[route].pere.angle *180 )/ m.pi - angle *180 / m.pi
+    else : 
+        angle_difference = 90
+
+    if route == -1:
+        routeP = parking.rampe
+    else :
+        routeP = parking.routes[route]
+
+    if random_road==0:
+        maxroadtemp= pc.maxRoad(routeP, largeurRoute, angle, parking.espace, 1)
+    else :
+        if not (abs(angle_difference) % 180 <= 10) :
+            maxroadtemp=pc.Route(routeP, random_len*15, largeurRoute, angle, parking.espace)
+        else :
+            print(angle_difference) 
+            maxroadtemp=pc.Route(routeP, 15, largeurRoute, angle, parking.espace)
+    
+    maxroadtemp.cutEnd(longueurPlace)
+    parking.addRoute(maxroadtemp)
+    espacedispo = parking.espace_dispo()
+    listAvailable.pop(index)
+    listAvailable += [(len(parking.routes) - 1, i) for i in range(1,3)]
+    return remplissageAleatoireAux(parking, largeurRoute, longueurPlace, largeurPlace, listAvailable)

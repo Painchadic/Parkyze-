@@ -87,6 +87,12 @@ class Parking :
         py.ylim(c,d)
         py.show()
         return 0
+    
+    def espace_dispo(self):
+        union = self.rampe.forme
+        for i in (self.places + self.routes):
+            union = union.union(i.forme)
+        return (1 - (union.area / self.espace.forme.area))
 
 class ParkingTree :
 
