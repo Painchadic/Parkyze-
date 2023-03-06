@@ -26,7 +26,7 @@ class Parking :
         for route in self.routes:
             e = (largeur - route.largeur)/2
             if not(route.limite) or route.limite == 'droite':
-                while e < route.longueur + route.largeur - 1.5*(largeur) :
+                while e < route.longueur + route.largeur - 1.1*(largeur) :
                     place = Place(route, longueur, largeur, e, 'droite', self.espace)
                     probleme, cause = self.gene(n = place, lim = 0.01)
                     if not(probleme) :
@@ -38,7 +38,7 @@ class Parking :
 
             if not(route.limite) or route.limite == 'gauche':
                 e = (largeur - route.largeur)/2
-                while e < route.longueur + route.largeur - 1.5*(largeur) :
+                while e < route.longueur + route.largeur - 1.1*(largeur) :
                     place = Place(route, longueur, largeur, e, 'gauche', self.espace)
                     probleme, cause = self.gene(n = place, lim = 0.01)
                     if not(probleme) :
@@ -66,6 +66,27 @@ class Parking :
 
     def nbPlace(self):
         return len(self.places)
+
+    def affichage(self):
+        for i in (self.routes+self.places+[self.rampe]+[self.espace]):
+            resX = []
+            resY = []
+
+            couleur, points = i.color, i.forme
+    
+            resX, resY = points.exterior.xy
+            if type(i) == Route :
+                py.fill(resX,resY, color = 'k')
+            py.plot(resX,resY, color = couleur)
+
+        resX, resY = self.espace.forme.exterior.xy
+        py.plot(resX,resY, color = self.espace.color)
+
+        a,b,c,d = camera(self.espace)
+        py.xlim(a,b)
+        py.ylim(c,d)
+        py.show()
+        return 0
 
 class ParkingTree :
 
