@@ -14,7 +14,9 @@ class Parking :
     def copy(self):
         parking = Parking(self.rampe, self.espace)
         parking.routes = self.routes.copy()
-        parking.places = self.places.copy()
+        for place in self.places:
+            i = self.routes.index(place.pere)
+            parking.places = Place(parking.routes[i], place.longueur, place.largeur, place.position, place.a, self.espace)
         return(parking)
 
     def addRoute(self, route):
@@ -63,6 +65,30 @@ class Parking :
                 if ((type(n) != Route and type(n) != Rampe) or (type(j) != Route and type(j) != Rampe)):
                     return True, j
         return False, 'rien'
+    
+    def supprPlace(self, route, direction):
+        indexes = []
+        for i in range(self.nbPlace()):
+            if (self.places[i].a == direction) and (self.places[i].pere == self.routes[route]):
+                indexes += [i]
+        for i in indexes[::-1]:
+            self.places.pop(i)
+            return 0
+        
+    def placePrecis(self, route, direction, longueur, largeur):
+        route = self.routes[route]
+        e = (largeur - route.largeur)/2
+        if not(route.limite) or route.limite == direction:
+            while e < route.longueur + route.largeur - 1.1*(largeur) :
+                place = Place(route, longueur, largeur, e, direction, self.espace)
+                probleme, cause = self.gene(n = place, lim = 0.01)
+                if not(probleme) :
+                    if place.valide:
+                        self.places += [place]
+                        e += largeur
+                    else : 
+                        e = max((finProblem(cause, route, longueur) + largeur/2),e+0.1)
+        return 0
 
     def nbPlace(self):
         return len(self.places)
@@ -233,6 +259,7 @@ class Place(ParkingTree) :
         self.longueur = l 
         self.largeur = lar
         self.pos = pos
+        self.a = a
         self.position = [p.position[0] + m.cos(p.angle) * pos,p.position[1] + m.sin(p.angle) * pos]
         if a == 'gauche' :
             self.angle = p.angle + m.pi/2
@@ -406,7 +433,7 @@ def maxRoad(p, lar, a, edt, lim, posper = -1):
     mini = 0
     maxi = max(xmax - xmin, ymax - ymin)
 
-    while (maxi - mini) > lim:
+    while (maxi - mini) > lim and (maxi > (lar/8)):
         inter = (maxi + mini)/2
         tmpRoute = Route(copyPere, inter, lar, a, edt, pospere = posper)
         if tmpRoute.valide:
@@ -414,4 +441,6 @@ def maxRoad(p, lar, a, edt, lim, posper = -1):
         else : 
             maxi = inter
         del tmpRoute
+    if (maxi <= (lar/8)):
+        return Route(p, 0, lar, a, edt, pospere = posper)
     return Route(p, mini, lar, a, edt, pospere = posper)

@@ -236,3 +236,94 @@ def remplissageAleatoireAux(parking : pc.Parking, largeurRoute : float, longueur
     listAvailable.pop(index)
     listAvailable += [(len(parking.routes) - 1, i) for i in range(1,3)]
     return remplissageAleatoireAux(parking, largeurRoute, longueurPlace, largeurPlace, listAvailable)
+
+
+def remplissageAutomatique2(parking : pc.Parking, largeurRoute : float, longueurPlace : float, largeurPlace : float, generations = 10, nombreDeFils = 5, nombreDeSurvivant = 2):
+    parking.remplissagePlace(longueurPlace, largeurPlace)
+    listParking = [parking]
+    listScore = [0]
+    return remplissageAutomatiqueAux2(listParking, listScore, largeurRoute, longueurPlace, largeurPlace, generations, nombreDeFils, nombreDeSurvivant)
+
+def remplissageAutomatiqueAux2(listParking, listScore, largeurRoute : float, longueurPlace : float, largeurPlace : float, generations, nombreDeFils, nombreDeSurvivant):
+
+    if generations == 0:
+        max = listScore[0]
+        index = 0
+        for i in range(1, len(listScore)):
+            if max < listScore[i] :
+                max = listScore[1]
+                index = i
+        par = listParking[index]
+        par.remplissagePlace(longueurPlace, largeurPlace)
+        return par
+    
+    print(listScore)
+
+    listParkingTMP = []
+    listScoreTMP = []
+    j = 0
+    for parking in listParking :
+        listParkingTMP += [parking.copy()]
+        listScoreTMP += [listScore[j]]
+        j += 1
+        changements = []
+        for i in range(nombreDeFils):
+            parkingTMP = parking.copy()
+            scoreTMP, changementTMP = mutation(parkingTMP, largeurRoute, longueurPlace, largeurPlace)
+            if changementTMP in changements :
+                continue
+            listParkingTMP += [parkingTMP]
+            listScoreTMP += [scoreTMP]
+            changements += [changementTMP]
+
+    print(listScoreTMP)
+    print(listParkingTMP)
+
+    while len(listParkingTMP) > nombreDeSurvivant:
+        min_index = listScoreTMP.index(min(listScoreTMP))
+        listScoreTMP.pop(min_index)
+        listParkingTMP.pop(min_index)
+    
+    print(listParkingTMP)
+    print(listScoreTMP)
+
+    return remplissageAutomatiqueAux2(listParkingTMP, listScoreTMP, largeurRoute, longueurPlace, largeurPlace, generations - 1, nombreDeFils, nombreDeSurvivant)
+
+def mutation(parking : pc.Parking, largeurRoute : float, longueurPlace, largeurPlace):
+    
+    scenario = random.randint(1,1)
+
+    match scenario:
+        # Route qui va jusqu'au fond
+        case 1:
+            route = random.randint(-1, len(parking.routes) - 1)
+            direction = random.randint(0,2)
+            if route == -1 :
+                match direction :
+                    case 0 :
+                        parking.addRoute(pc.maxRoad(parking.rampe, largeurRoute, 0, parking.espace, 1))
+                        changement = 'MaxRoad ' + 'Rampe ' + 'Devant'
+                    case 1 :
+                        parking.addRoute(pc.maxRoad(parking.rampe, largeurRoute, m.pi/2, parking.espace, 1))
+                        changement = 'MaxRoad ' + 'Rampe ' + 'Gauche'
+                    case 2 :
+                        parking.addRoute(pc.maxRoad(parking.rampe, largeurRoute, -m.pi/2, parking.espace, 1))
+                        changement = 'MaxRoad ' + 'Rampe ' + 'Droite'
+            else :
+                position = random.random() * parking.routes[route].longueur
+                match direction :
+                    case 0 :
+                        parking.addRoute(pc.maxRoad(parking.routes[route], largeurRoute, 0, parking.espace, 1))
+                        changement = 'MaxRoad ' + 'Route ' + str(route) + ' Devant'
+                    case 1 :
+                        parking.addRoute(pc.maxRoad(parking.routes[route], largeurRoute, m.pi/2, parking.espace, 1, position))
+                        changement = 'MaxRoad ' + 'Route ' + str(route) + ' Gauche ' + str(position)
+                    case 2 :
+                        parking.addRoute(pc.maxRoad(parking.routes[route], largeurRoute, -m.pi/2, parking.espace, 1))
+                        changement = 'MaxRoad ' + 'Route ' + str(route) + ' Droite ' + str(position)
+        # Route qui va jusqu'au fond quasiment
+        # Route qui va +opti 
+    placeP = parking.copy()
+    placeP.remplissagePlace(longueurPlace, largeurPlace)
+    score = (placeP.espace_dispo() * 50) + placeP.nbPlace()
+    return (score, changement)
