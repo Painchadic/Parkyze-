@@ -408,8 +408,11 @@ def finProblem(poly, route, longueur):
         points[i][1] += route.position[1]
     f = shapely.geometry.Polygon(points)
     test = f.intersection(poly.forme)
-    xx, yy = test.exterior.xy
-    coords = [[xx[i], yy[i]] for i in range(len(xx))]
+    if type(test) == shapely.geometry.LineString or type(test) == shapely.geometry.MultiLineString:
+        coords = test.coords
+    else :
+        xx, yy = test.exterior.xy
+        coords = [[xx[i], yy[i]] for i in range(len(xx))]
     fin = 0
     for co in coords :
         fin = max(fin, (co[0] - route.position[0]) * m.cos(route.angle) + (co[1] - route.position[1]) * m.sin(route.angle))

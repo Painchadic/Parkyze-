@@ -255,6 +255,7 @@ def remplissageAutomatiqueAux2(listParking, listScore, largeurRoute : float, lon
                 index = i
         par = listParking[index]
         par.remplissagePlace(longueurPlace, largeurPlace)
+        print(max)
         return par
     
     print(listScore)
@@ -276,22 +277,16 @@ def remplissageAutomatiqueAux2(listParking, listScore, largeurRoute : float, lon
             listScoreTMP += [scoreTMP]
             changements += [changementTMP]
 
-    print(listScoreTMP)
-    print(listParkingTMP)
-
     while len(listParkingTMP) > nombreDeSurvivant:
         min_index = listScoreTMP.index(min(listScoreTMP))
         listScoreTMP.pop(min_index)
         listParkingTMP.pop(min_index)
-    
-    print(listParkingTMP)
-    print(listScoreTMP)
 
     return remplissageAutomatiqueAux2(listParkingTMP, listScoreTMP, largeurRoute, longueurPlace, largeurPlace, generations - 1, nombreDeFils, nombreDeSurvivant)
 
 def mutation(parking : pc.Parking, largeurRoute : float, longueurPlace, largeurPlace):
     
-    scenario = random.randint(1,1)
+    scenario = random.randint(1,3)
 
     match scenario:
         # Route qui va jusqu'au fond
@@ -319,10 +314,85 @@ def mutation(parking : pc.Parking, largeurRoute : float, longueurPlace, largeurP
                         parking.addRoute(pc.maxRoad(parking.routes[route], largeurRoute, m.pi/2, parking.espace, 1, position))
                         changement = 'MaxRoad ' + 'Route ' + str(route) + ' Gauche ' + str(position)
                     case 2 :
-                        parking.addRoute(pc.maxRoad(parking.routes[route], largeurRoute, -m.pi/2, parking.espace, 1))
+                        parking.addRoute(pc.maxRoad(parking.routes[route], largeurRoute, -m.pi/2, parking.espace, 1, position))
                         changement = 'MaxRoad ' + 'Route ' + str(route) + ' Droite ' + str(position)
+        
         # Route qui va jusqu'au fond quasiment
+        case 2:
+            route = random.randint(-1, len(parking.routes) - 1)
+            direction = random.randint(0,2)
+            if route == -1 :
+                match direction :
+                    case 0 :
+                        route = pc.maxRoad(parking.rampe, largeurRoute, 0, parking.espace, 1)
+                        route.cutEnd(longueurPlace)
+                        parking.addRoute(route)
+                        changement = 'Quasi MaxRoad ' + 'Rampe ' + 'Devant'
+                    case 1 :
+                        route = pc.maxRoad(parking.rampe, largeurRoute, m.pi/2, parking.espace, 1)
+                        route.cutEnd(longueurPlace)
+                        parking.addRoute(route)
+                        changement = 'Quasi MaxRoad ' + 'Rampe ' + 'Gauche'
+                    case 2 :
+                        route = pc.maxRoad(parking.rampe, largeurRoute, -m.pi/2, parking.espace, 1)
+                        route.cutEnd(longueurPlace)
+                        parking.addRoute(route)
+                        changement = 'Quasi MaxRoad ' + 'Rampe ' + 'Droite'
+            else :
+                position = random.random() * parking.routes[route].longueur
+                match direction :
+                    case 0 :
+                        route = pc.maxRoad(parking.routes[route], largeurRoute, 0, parking.espace, 1)
+                        route.cutEnd(longueurPlace)
+                        parking.addRoute(route)
+                        changement = 'Quasi MaxRoad ' + 'Route ' + str(route) + ' Devant'
+                    case 1 :
+                        route = pc.maxRoad(parking.routes[route], largeurRoute, -m.pi/2, parking.espace, 1, position)
+                        route.cutEnd(longueurPlace)
+                        parking.addRoute(route)
+                        changement = 'Quasi MaxRoad ' + 'Route ' + str(route) + ' Gauche ' + str(position)
+                    case 2 :
+                        route = pc.maxRoad(parking.routes[route], largeurRoute, -m.pi/2, parking.espace, 1, position)
+                        route.cutEnd(longueurPlace)
+                        parking.addRoute(route)
+                        changement = 'Quasi MaxRoad ' + 'Route ' + str(route) + ' Droite ' + str(position)
+        
         # Route qui va +opti 
+
+        case 3:
+            long = longueurPlace*2 + largeurRoute + 0.2
+            route = random.randint(-1, len(parking.routes) - 1)
+            direction = random.randint(0,2)
+            if route == -1 :
+                match direction :
+                    case 0 :
+                        route = pc.Route(parking.rampe, long, largeurRoute, 0, parking.espace)
+                        parking.addRoute(route)
+                        changement = 'Longueur opti ' + 'Rampe ' + 'Devant'
+                    case 1 :
+                        route = pc.Route(parking.rampe, long, largeurRoute, m.pi/2, parking.espace)
+                        parking.addRoute(route)
+                        changement = 'Longueur opti ' + 'Rampe ' + 'Gauche'
+                    case 2 :
+                        route = pc.Route(parking.rampe, long, largeurRoute, -m.pi/2, parking.espace)
+                        parking.addRoute(route)
+                        changement = 'Longueur opti ' + 'Rampe ' + 'Droite'
+            else :
+                position = random.random() * parking.routes[route].longueur
+                match direction :
+                    case 0 :
+                        route = pc.Route(parking.routes[route], long, largeurRoute, 0, parking.espace)
+                        parking.addRoute(route)
+                        changement = 'Longueur opti ' + 'Route ' + str(route) + ' Devant'
+                    case 1 :
+                        route = pc.Route(parking.routes[route], long, largeurRoute, -m.pi/2, parking.espace)
+                        parking.addRoute(route)
+                        changement = 'Longueur opti ' + 'Route ' + str(route) + ' Gauche ' + str(position)
+                    case 2 :
+                        route = pc.Route(parking.routes[route], long, largeurRoute, -m.pi/2, parking.espace)
+                        parking.addRoute(route)
+                        changement = 'Longueur opti ' + 'Route ' + str(route) + ' Droite ' + str(position)
+
     placeP = parking.copy()
     placeP.remplissagePlace(longueurPlace, largeurPlace)
     score = (placeP.espace_dispo() * 50) + placeP.nbPlace()
