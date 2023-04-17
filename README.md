@@ -51,15 +51,15 @@ Des fonctions auxiliaires pour les fonctions de remplissage :
 
 Les paramètres pour chaque fonction sont les suivants :
 
-> Parking : une instance de la classe Parking représentant le parking.
-espace : une liste de points représentant l'espace de travail.
-rampe : une instance de la classe Rampe représentant la rampe d'accès au parking.
-largeurRoute : la largeur des routes dans le parking.
-longueurPlace : la longueur des places de parking dans le parking.
-largeurPlace : la largeur des places de parking dans le parking.
-generations : le nombre de générations à utiliser pour l'algorithme génétique (pour remplissageAutomatique2).
-nombreDeFils : le nombre de descendants pour chaque génération de l'algorithme génétique (pour remplissageAutomatique2).
-nombreDeSurvivant : le nombre de survivants pour chaque génération de l'algorithme génétique (pour remplissageAutomatique2).
+> - Parking : une instance de la classe Parking représentant le parking.
+- espace : une liste de points représentant l'espace de travail.
+- rampe : une instance de la classe Rampe représentant la rampe d'accès au parking.
+- largeurRoute : la largeur des routes dans le parking.
+- longueurPlace : la longueur des places de parking dans le parking.
+- largeurPlace : la largeur des places de parking dans le parking.
+- generations : le nombre de générations à utiliser pour l'algorithme génétique (pour remplissageAutomatique2).
+- nombreDeFils : le nombre de descendants pour chaque génération de l'algorithme génétique (pour remplissageAutomatique2).
+- nombreDeSurvivant : le nombre de survivants pour chaque génération de l'algorithme génétique (pour remplissageAutomatique2).
 
 
 ## Exemple d'utilisation
