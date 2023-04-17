@@ -25,7 +25,7 @@ class Parking :
 
     def remplissagePlace(self, longueur, largeur):
     #Ici on va parcourir toutes les routes afin de remplir tout esapce disponible en places
-        for route in self.routes:
+        for route in self.routes[::-1]:
             e = (largeur - route.largeur)/2
             if not(route.limite) or route.limite == 'droite':
                 while e < route.longueur + route.largeur - 1.1*(largeur) :
@@ -430,7 +430,7 @@ def ratio(parking, espace) -> float :
 
 #def dist sortie
 
-def maxRoad(p, lar, a, edt, lim, posper = -1):
+def maxRoad(p, lar, a, edt, lim, posper = -1, limi = False):
     copyPere = p.copy(edt)
     xmin, ymin, xmax, ymax = edt.forme.bounds
     mini = 0
@@ -438,7 +438,7 @@ def maxRoad(p, lar, a, edt, lim, posper = -1):
 
     while (maxi - mini) > lim and (maxi > (lar/8)):
         inter = (maxi + mini)/2
-        tmpRoute = Route(copyPere, inter, lar, a, edt, pospere = posper)
+        tmpRoute = Route(copyPere, inter, lar, a, edt, pospere = posper, lim = limi)
         if tmpRoute.valide:
             mini = inter
         else : 

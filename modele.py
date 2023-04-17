@@ -12,7 +12,7 @@ def remplissageAutoParkingStandart1(parking, largeurRoute, longueurPlace, largeu
     angle = 0
     lon = 0
     while lon < longueurOpti + longueurPlace and angle < 7:
-        tmp = pc.maxRoad(parking.rampe, largeurRoute, angle, parking.espace, 0.1)
+        tmp = pc.maxRoad(parking.rampe, largeurRoute, angle, parking.espace, 0.1, limi = True)
         lon = tmp.longueur
         angle += angleTest
     
@@ -395,5 +395,5 @@ def mutation(parking : pc.Parking, largeurRoute : float, longueurPlace, largeurP
 
     placeP = parking.copy()
     placeP.remplissagePlace(longueurPlace, largeurPlace)
-    score = (placeP.espace_dispo() * 50) + placeP.nbPlace()
+    score = (placeP.espace_dispo() * (parking.espace.forme.area / ((longueurPlace * largeurPlace * 2) + (largeurPlace * largeurRoute * 2)))) + placeP.nbPlace()
     return (score, changement)
