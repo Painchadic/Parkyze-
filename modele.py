@@ -394,5 +394,5 @@ def mutation(parking : pc.Parking, largeurRoute : float, longueurPlace, largeurP
 
     placeP = parking.copy()
     placeP.remplissagePlace(longueurPlace, largeurPlace)
-    score = (placeP.espace_dispo() * (parking.espace.forme.area / ((longueurPlace * largeurPlace * 2) + (largeurPlace * largeurRoute)))*1.5) + placeP.nbPlace()
+    score = (placeP.espace_dispo() * (parking.espace.forme.area / ((longueurPlace * largeurPlace * 2) + (largeurPlace * largeurRoute))) * 1.2) + placeP.nbPlace()
     return (score, changement)
