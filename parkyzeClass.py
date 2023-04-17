@@ -119,6 +119,9 @@ class Parking :
         for i in (self.places + self.routes):
             union = union.union(i.forme)
         return (1 - (union.area / self.espace.forme.area))
+    
+    def ratio(self):
+        return (self.espace.forme.area / self.nbPlace())
 
 class ParkingTree :
 
@@ -417,16 +420,6 @@ def finProblem(poly, route, longueur):
     for co in coords :
         fin = max(fin, (co[0] - route.position[0]) * m.cos(route.angle) + (co[1] - route.position[1]) * m.sin(route.angle))
     return fin
-
-def nbPlace(parking) -> int:
-    res = 0
-    for e in parking :
-        if type(e) == Place :
-            res += 1
-    return res
-
-def ratio(parking, espace) -> float :
-    return (espace.forme.area / nbPlace(parking))
 
 #def dist sortie
 

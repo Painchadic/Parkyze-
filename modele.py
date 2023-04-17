@@ -5,7 +5,7 @@ import numpy as np
 import shapely.geometry
 import random
 
-def remplissageAutoParkingStandart1(parking, largeurRoute, longueurPlace, largeurPlace, angleTest = m.pi/2):
+def remplissageAutoParkingStandard1(parking, largeurRoute, longueurPlace, largeurPlace, angleTest = m.pi/2):
     longueurOpti = largeurRoute + 2*longueurPlace
 
 
@@ -31,7 +31,7 @@ def remplissageAutoParkingStandart1(parking, largeurRoute, longueurPlace, largeu
 
     return 1
 
-def remplissageAutoParkingStandart2(parking, largeurRoute, longueurPlace, largeurPlace):
+def remplissageAutoParkingStandard2(parking, largeurRoute, longueurPlace, largeurPlace):
     longueurOpti = largeurRoute + 2*longueurPlace
 
     parking.addRoute(pc.maxRoad(parking.rampe, largeurRoute, m.pi/2, parking.espace, 1))
@@ -53,7 +53,7 @@ def remplissageAutoParkingStandart2(parking, largeurRoute, longueurPlace, largeu
     parking.remplissagePlace(longueurPlace, largeurPlace)
     return 1
 
-def remplissageAutoParkingStandart3(parking : pc.Parking, largeurRoute, longueurPlace, largeurPlace):
+def remplissageAutoParkingStandard3(parking : pc.Parking, largeurRoute, longueurPlace, largeurPlace):
     longueurOpti = largeurRoute + 2*longueurPlace
 
     parking.addRoute(pc.maxRoad(parking.rampe, largeurRoute, m.pi/2, parking.espace, 1))
@@ -148,7 +148,7 @@ def remplissageAutoParkingStandart3(parking : pc.Parking, largeurRoute, longueur
 
     return parkinglist[iMax]
 
-def remplissageAutoParkingStandart4(parking : pc.Parking, largeurRoute, longueurPlace, largeurPlace):
+def remplissageAutoParkingStandard4(parking : pc.Parking, largeurRoute, longueurPlace, largeurPlace):
     longueurOpti = largeurRoute + 2*longueurPlace
 
     parking.addRoute(pc.maxRoad(parking.rampe, largeurRoute, m.pi/2, parking.espace, 1))
@@ -236,7 +236,6 @@ def remplissageAleatoireAux(parking : pc.Parking, largeurRoute : float, longueur
     listAvailable.pop(index)
     listAvailable += [(len(parking.routes) - 1, i) for i in range(1,3)]
     return remplissageAleatoireAux(parking, largeurRoute, longueurPlace, largeurPlace, listAvailable)
-
 
 def remplissageAutomatique2(parking : pc.Parking, largeurRoute : float, longueurPlace : float, largeurPlace : float, generations = 10, nombreDeFils = 5, nombreDeSurvivant = 2):
     parking.remplissagePlace(longueurPlace, largeurPlace)
@@ -395,5 +394,5 @@ def mutation(parking : pc.Parking, largeurRoute : float, longueurPlace, largeurP
 
     placeP = parking.copy()
     placeP.remplissagePlace(longueurPlace, largeurPlace)
-    score = (placeP.espace_dispo() * (parking.espace.forme.area / ((longueurPlace * largeurPlace * 2) + (largeurPlace * largeurRoute * 2)))) + placeP.nbPlace()
+    score = (placeP.espace_dispo() * (parking.espace.forme.area / ((longueurPlace * largeurPlace * 2) + (largeurPlace * largeurRoute)))*1.5) + placeP.nbPlace()
     return (score, changement)
