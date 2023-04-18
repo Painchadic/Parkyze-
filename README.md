@@ -1,5 +1,5 @@
 # Parkyze
-Ce programme permet de générer un parking automatiquement en utilisant des classes et des fonctions Python.
+Ce programme permet de générer un plan de parking automatiquement en utilisant des classes et des fonctions Python.
 
 ## Installation
 Avant de pouvoir utiliser ce script, il est nécessaire d'installer certaines librairies Python. Vous pouvez le faire en exécutant la commande suivante dans votre terminal :
